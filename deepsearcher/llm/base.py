@@ -23,11 +23,26 @@ class BaseLLM(ABC):
     @staticmethod
     def literal_eval(response_content: str):
         response_content = response_content.strip()
-
+        print(response_content)
         # remove content between <think> and </think>, especial for DeepSeek reasoning model
         if "<think>" and "</think>" in response_content:
             end_of_think = response_content.find("</think>") + len("</think>")
             response_content = response_content[end_of_think:]
+
+        #add an extra fix to remove unneeded content in response
+        if "```" in response_content and not(response_content.startswith("```")):
+            list_response = response_content.split('\n')
+            start_idx = 0
+            end_idx = 0
+            for ii in range(len(list_response)):
+                if list_response[ii].startswith("```") and start_idx == 0:
+                    start_idx = ii
+                elif list_response[ii].startswith("```") and end_idx == 0:
+                    end_idx = ii
+            
+            list_response = list_response[start_idx:end_idx+1]
+            response_content = '\n'.join(list_response)
+        print(response_content)
 
         try:
             if response_content.startswith("```") and response_content.endswith("```"):
@@ -44,13 +59,12 @@ class BaseLLM(ABC):
             result = ast.literal_eval(response_content.strip())
         except ValueError:
             matches = re.findall(r"(\[.*?\]|\{.*?\})", response_content, re.DOTALL)
-
             if len(matches) != 1:
                 raise ValueError(
                     f"Invalid JSON/List format for response content:\n{response_content}"
                 )
-
             json_part = matches[0]
             return ast.literal_eval(json_part)
-
+        
+        print(result)
         return result

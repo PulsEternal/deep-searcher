@@ -16,13 +16,15 @@ class OpenAI(BaseLLM):
         if "base_url" in kwargs:
             base_url = kwargs.pop("base_url")
         else:
-            base_url = os.getenv("OPENAI_BASE_URL")
+            base_url = None
         self.client = OpenAI_(api_key=api_key, base_url=base_url, **kwargs)
 
     def chat(self, messages: List[Dict]) -> ChatResponse:
         completion = self.client.chat.completions.create(
             model=self.model,
             messages=messages,
+            temperature=0.6,
+            top_p=0.95
         )
         return ChatResponse(
             content=completion.choices[0].message.content,
